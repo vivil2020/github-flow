@@ -51,6 +51,10 @@ jobs:
       - name: List dist contents
         run: ls -la ./dist
 
+      # 复制 index.html 为 404.html（解决 GitHub Pages 子路径访问问题）
+      - name: Create 404.html
+        run: cp ./dist/index.html ./dist/404.html
+
       # 将构建产物推送到 gh-pages 分支
       - name: Deploy to gh-pages branch
         uses: peaceiris/actions-gh-pages@v4
