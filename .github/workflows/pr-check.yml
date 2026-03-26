@@ -1,0 +1,101 @@
+# PR 检查工作流
+# 当发起 Pull Request 时自动运行代码质量检查
+
+name: PR Check
+
+# 触发条件
+on:
+  pull_request:
+    # 目标分支：main 或 master
+    branches: [main, master]
+    # 触发类型：PR 创建、代码更新、重新打开
+    types: [opened, synchronize, reopened]
+
+# 权限控制：仅允许读取仓库内容，安全考虑
+permissions:
+  contents: read
+
+jobs:
+  # 任务1：代码规范检查（ESLint + Oxlint）
+  # 跳过草稿状态的 PR
+  lint:
+    name: Lint
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      # 检出代码
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 安装 pnpm 包管理器（自动读取 package.json 中的 packageManager 字段）
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      # 安装 Node.js 并启用 pnpm 缓存
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      # 安装项目依赖
+      - name: Install dependencies
+        run: pnpm install
+
+      # 运行代码规范检查
+      - name: Run lint
+        run: pnpm lint
+
+  # 任务2：TypeScript 类型检查
+  # 跳过草稿状态的 PR
+  type-check:
+    name: Type Check
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 安装 pnpm 包管理器（自动读取 package.json 中的 packageManager 字段）
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      # 运行 TS 类型检查（vue-tsc）
+      - name: Run TypeScript check
+        run: pnpm ts
+
+  # 任务3：单元测试（Vitest）
+  # 跳过草稿状态的 PR
+  test:
+    name: Test
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 安装 pnpm 包管理器（自动读取 package.json 中的 packageManager 字段）
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      # 运行单元测试（--run 参数表示非 watch 模式）
+      - name: Run tests
+        run: pnpm test:unit --run
