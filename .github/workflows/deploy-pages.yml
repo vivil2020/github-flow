@@ -1,5 +1,5 @@
 # GitHub Pages 自动部署工作流
-# 当代码合并到 main 分支时自动构建并部署到 GitHub Pages
+# 当代码合并到 main 分支时自动构建并推送到 gh-pages 分支
 
 name: Deploy to GitHub Pages
 
@@ -11,9 +11,7 @@ on:
 
 # 权限控制
 permissions:
-  contents: read          # 读取仓库内容
-  pages: write            # 写入 GitHub Pages
-  id-token: write         # 用于部署认证
+  contents: write         # 需要写权限来推送分支
 
 # 并发控制：防止多个部署任务同时执行
 concurrency:
@@ -21,16 +19,16 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # 任务1：构建项目
-  build:
-    name: Build
+  # 任务：构建项目并推送到 gh-pages 分支
+  build-and-deploy:
+    name: Build and Deploy
     runs-on: ubuntu-latest
     steps:
       # 检出代码
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 安装 pnpm 包管理器（自动读取 package.json 中的 packageManager 字段）
+      # 安装 pnpm 包管理器（自动读取 packageManager 字段）
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
@@ -53,26 +51,10 @@ jobs:
       - name: List dist contents
         run: ls -la ./dist
 
-      # 上传构建产物到 GitHub Pages
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      # 将构建产物推送到 gh-pages 分支
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          # 上传构建输出目录
-          path: ./dist
-
-  # 任务2：部署到 GitHub Pages
-  deploy:
-    name: Deploy
-    needs: build          # 等待构建任务完成
-    runs-on: ubuntu-latest
-    
-    # 部署环境配置
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    
-    steps:
-      # 部署到 GitHub Pages
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
