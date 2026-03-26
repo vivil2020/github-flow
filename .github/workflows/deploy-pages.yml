@@ -49,6 +49,10 @@ jobs:
       - name: Build project
         run: pnpm build
 
+      # 检查构建产物
+      - name: List dist contents
+        run: ls -la ./dist
+
       # 上传构建产物到 GitHub Pages
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
