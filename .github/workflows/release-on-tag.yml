@@ -1,0 +1,46 @@
+# Tag Release 工作流
+# 当推送标签到远程仓库时，自动创建 Release
+
+name: Release on Tag
+
+# 触发条件：推送标签时触发
+on:
+  push:
+    tags:
+      # 匹配任意标签，如 v1.0.0, release/1.0.0 等
+      - '**'
+
+# 权限控制
+permissions:
+  contents: write # 需要写权限来创建 Release
+
+jobs:
+  # 任务：创建 Release
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      # 检出代码
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 获取当前北京时间并格式化
+      - name: Get Beijing Time
+        id: time
+        run: |
+          # 获取当前 UTC 时间并转换为北京时间 (UTC+8)
+          beijing_time=$(date -u -d '+8 hours' '+%Y-%m-%d %H:%M:%S')
+          echo "time=$beijing_time" >> "$GITHUB_OUTPUT"
+          echo "Beijing Time: $beijing_time"
+
+      # 创建 Release
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          # Release 标题包含标签名和北京时间
+          name: 'Release ${{ github.ref_name }} - ${{ steps.time.outputs.time }}'
+          # 自动生成 Release Notes
+          generate_release_notes: true
+        env:
+          # 使用 GITHUB_TOKEN 进行认证
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
